@@ -29,7 +29,7 @@ To run Crypto Labeler, ensure you have the following installed:
    ```bash
    cd crypto-labeler
    ```
-3. Install dependencies using Yarn:
+3. Install dependencies using Pnpm:
    ```bash
    pnpm install
    ```
@@ -41,7 +41,7 @@ To run Crypto Labeler, ensure you have the following installed:
 To start the bot, run:
 
 ```bash
-yarn start
+pnpm start
 ```
 
 This command initiates the bot, resuming a previous session if available or logging in as a new session.
