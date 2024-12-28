@@ -26,8 +26,8 @@ export async function findTrendingCoins() {
 
     // Return them so the caller can use them
     return [
-      //...coinNames, 
-      //...nftNames, 
+      ...coinNames, 
+      ...nftNames, 
       ...coinNamesMktCap
     ];
   } catch (error) {
