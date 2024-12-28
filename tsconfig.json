@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    // Use 'commonjs' or 'node16' or 'nodenext' depending on your needs.
+    "module": "nodenext",
+    "target": "ES2020", 
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    ""
+  },
+  "include": ["./src"]  // or ["./src"] if you want
+}
+
