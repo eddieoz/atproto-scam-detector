@@ -13,6 +13,9 @@ import { processBufferedMessages } from './modules/spamDetection';
 import { updateScamTerms, processScamMessage } from './modules/scamDetection';
 import { loadIgnoreArray } from './modules/ignoreWatcher';
 
+import { Bot } from '@skyware/bot';
+
+
 dotenv.config();
 
 // Time window (seconds) for spam detection aggregator
