@@ -95,9 +95,12 @@ This project is licensed under the MIT License. See the `LICENSE.txt` file for f
 
 ## Support This Project
 
-If you find this project helpful, please consider supporting it:
+If you found this project helpful, please consider supporting it:
 
-- **Lightning Network**: `eddieoz@sats4.life`
-- **Buy Me a Coffee**: [https://www.buymeacoffee.com/eddieoz](https://www.buymeacoffee.com/eddieoz)
+[Buy me a coffee](https://www.buymeacoffee.com/eddieoz)
+
+[![Buy me a coffee](https://ipfs.io/ipfs/QmR6W4L3XiozMQc3EjfFeqSkcbu3cWnhZBn38z2W2FuTMZ?filename=buymeacoffee.webp)](https://www.buymeacoffee.com/eddieoz)
+
+Or drop me a tip through Lightning Network: ⚡ [getalby.com/p/eddieoz](https://getalby.com/p/eddieoz)
 
 Your contributions and support are greatly appreciated!
