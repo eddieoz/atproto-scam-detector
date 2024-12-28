@@ -15,7 +15,7 @@ This bot leverages [ATProto](https://github.com/bluesky-social/atproto) and the 
 To run Crypto Labeler, ensure you have the following installed:
 
 - **Node.js** (version 20 or higher)
-- **Yarn** (version 1.22.22 or higher)
+- **Pnpm** (version 9.15.0 or higher)
 - **OpenAI** you need an account and API key to use the OPEN AI API. (gpt-4o-mini)
 - **Ozone Labeler** (registered with moderator permissions on the BlueSky network; see [Ozone](https://github.com/bluesky-social/ozone) for details)
 
@@ -31,7 +31,7 @@ To run Crypto Labeler, ensure you have the following installed:
    ```
 3. Install dependencies using Yarn:
    ```bash
-   yarn install
+   pnpm install
    ```
 
 ---
