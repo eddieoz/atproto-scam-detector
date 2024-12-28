@@ -21,4 +21,5 @@ session.json
 
 .vscode
 
-src/lists/
+src/lists/handle_ignore_array.js
+src/lists/scam_terms.js
