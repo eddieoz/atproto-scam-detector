@@ -18,6 +18,7 @@ To run Crypto Labeler, ensure you have the following installed:
 - **Pnpm** (version 9.15.0 or higher)
 - **OpenAI** you need an account and API key to use the OPEN AI API. (gpt-4o-mini)
 - **Ozone Labeler** (registered with moderator permissions on the BlueSky network; see [Ozone](https://github.com/bluesky-social/ozone) for details)
+- **PM2** (optional) PM2 is a daemon process manager that will help you manage and keep your application online 24/7
 
 ### Installation
 
@@ -45,6 +46,11 @@ pnpm start
 ```
 
 This command initiates the bot, resuming a previous session if available or logging in as a new session.
+
+If you want to run with pm2
+```bash
+pm2 start app.json
+```
 
 ### Configuration
 

@@ -1,0 +1,9 @@
+{
+    "apps": [
+        {
+            "name": "scam-detector",
+            "script": "pnpm",
+            "args": "start"
+        }
+    ]
+}
