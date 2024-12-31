@@ -16,9 +16,11 @@ if (!OPENAI_API_KEY) {
 export async function evaluateWithOpenAI(text) {
     try {
       const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
+        // 'https://api.openai.com/v1/chat/completions',
+        'https://api.deepseek.com/v1/chat/completions',
         {
-          model: 'gpt-4o-mini',
+          //model: 'gpt-4o-mini',
+          model: 'deepseek-chat',
           messages: [
             {
               role: 'system',
@@ -29,6 +31,7 @@ export async function evaluateWithOpenAI(text) {
               content: text,
             },
           ],
+          "stream": false,
         },
         {
           headers: {
@@ -39,7 +42,7 @@ export async function evaluateWithOpenAI(text) {
       );
   
       const result = response.data.choices[0].message.content.trim().toLowerCase();
-      return result;
+      return result.replace(/"/g, '');
     } catch (error) {
       console.error("Failed to communicate with OpenAI API:", error);
       return false;
