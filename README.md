@@ -51,6 +51,7 @@ If you want to run with pm2
 ```bash
 pm2 start app.json
 ```
+(`pm2 logs scam-detector` to see the logs output)
 
 ### Configuration
 
