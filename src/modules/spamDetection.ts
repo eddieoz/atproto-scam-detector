@@ -35,12 +35,12 @@ export async function processBufferedMessages(
         (op.payload as any).$type === 'app.bsky.feed.post' &&
         AppBskyFeedPost.isRecord(op.payload)
       ) {
-        const handle = await resolveDidToHandle(message.repo);
-        // Check if handle is in the static or DB-based ignore list
-        if (getIgnoreArray().includes(handle)) {
-          console.log(chalk.gray.bold(`Ignored message from ${handle} (static spam ignore list).`));
-          return;
-        }
+        // const handle = await resolveDidToHandle(message.repo);
+        // // Check if handle is in the static or DB-based ignore list
+        // if (getIgnoreArray().includes(handle)) {
+        //   console.log(chalk.gray.bold(`Ignored message from ${handle} (static spam ignore list).`));
+        //   return;
+        // }
         const text = op.payload.text || '';
         // Skip posts with fewer than 5 words
         if (text.trim().split(/\s+/).length <= 4) continue;
@@ -50,14 +50,14 @@ export async function processBufferedMessages(
 
         const accounts = postTextToAccounts.get(text) || [];
         // Only add if not already present
-        if (!accounts.some((a) => a.handle === handle)) {
-          accounts.push({ handle: handle, uri, cid });
+        if (!accounts.some((a) => a.did === message.repo)) {
+          accounts.push({ did: message.repo, uri, cid });
         }
         postTextToAccounts.set(text, accounts);
 
         // If this text has come from 2 or more accounts => label them all as spam
         if (accounts.length > 1) {
-          const joinedDids = accounts.map((acc) => acc.handle).join(', ');
+          const joinedDids = accounts.map((acc) => acc.did).join(', ');
 
           for (const account of accounts) {
             try {
@@ -67,7 +67,7 @@ export async function processBufferedMessages(
                 comment: `Auto-label SPAM URI: ${account.uri}`,
               });
             } catch (error) {
-              console.error(`Error labeling spam for DID ${account.handle}`, error);
+              console.error(`Error labeling spam for DID ${account.did}`, error);
             }
           }
 
