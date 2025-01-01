@@ -6,9 +6,6 @@ import {
   ComAtprotoSyncSubscribeRepos,
 } from 'atproto-firehose';
 
-import { handleScamClassification } from './scamDetection.js'; // Import for potential-scam classification
-import { resolveDidToHandle } from './didResolver.js';         // Resolve DID to handle
-
 import dotenv from 'dotenv';
 dotenv.config();
 
