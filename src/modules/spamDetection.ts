@@ -157,7 +157,7 @@ export async function processBufferedMessages(
           await bot.label({
             reference: { did: did },
             labels: ['spam'],
-            comment: `Auto-label SPAM (same account repeated text) over ${updatedScore} times, threshold = ${SCAM_SPAM_THRESHOLD}.`,
+            comment: `Auto-label SPAM (same account repeated text) over ${currentScore} times, threshold = ${SCAM_SPAM_THRESHOLD}.`,
           });
                     
           console.log(
