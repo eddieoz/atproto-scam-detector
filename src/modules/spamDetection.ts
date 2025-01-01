@@ -164,7 +164,7 @@ export async function processBufferedMessages(
             chalk.bgMagenta.bold('\n POTENTIAL SCAM DETECTED ') +
               chalk.magentaBright(`Account ${did} posted the same text `) +
               chalk.blue(`“${text}” `) +
-              chalk.magentaBright(`over ${updatedScore} times, threshold = ${SCAM_SPAM_THRESHOLD}.\n`)
+              chalk.magentaBright(`over ${currentScore} times, threshold = ${SCAM_SPAM_THRESHOLD}.\n`)
           );
 
           // Reset score after labeling
