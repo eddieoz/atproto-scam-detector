@@ -16,7 +16,7 @@ To run Crypto Labeler, ensure you have the following installed:
 
 - **Node.js** (version 20 or higher)
 - **Pnpm** (version 9.15.0 or higher)
-- **OpenAI** you need an account and API key to use the OPEN AI API. (gpt-4o-mini)
+- **DeepSeek-V3 API** you need an account and API key to use the DeepSeek API.
 - **Ozone Labeler** (registered with moderator permissions on the BlueSky network; see [Ozone](https://github.com/bluesky-social/ozone) for details)
 - **PM2** (optional) PM2 is a daemon process manager that will help you manage and keep your application online 24/7
 
