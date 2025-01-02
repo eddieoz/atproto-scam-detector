@@ -1,39 +1,65 @@
-import chalk from 'chalk';
-import { Bot } from '@skyware/bot';
-import { AppBskyFeedPost } from '@atproto/api';
+import chalk from "chalk";
+import { Bot } from "@skyware/bot";
+import { AppBskyFeedPost } from "@atproto/api";
 import {
   SubscribeReposMessage,
   ComAtprotoSyncSubscribeRepos,
-} from 'atproto-firehose';
+} from "atproto-firehose";
 
-import dotenv from 'dotenv';
-import { addHandleToMemoryIgnoreList } from './memDatabase';
+import dotenv from "dotenv";
+import { addHandleToMemoryIgnoreList } from "./memDatabase";
 dotenv.config();
 
-/**
- * AccountData interface
- */
+// Interface to define the structure of account data
 type AccountData = {
-  count: number;
-  postPaths: Set<string>;
-  posts: { uri: string; cid: string | null }[];
+  count: number; // Number of posts with the same text
+  postPaths: Set<string>; // Unique paths of posts
+  posts: { uri: string; cid: string | null }[]; // Array of post URIs and CIDs
 };
 
-/**
- * text -> DID -> { count, postPaths, posts }
- */
+// Map to store post text and associated account data
 const postTextMap = new Map<string, Map<string, AccountData>>();
 
-// Global in-memory map to store cumulative scores
+// Map to store cumulative spam scores for accounts
 const cumulativeSpamScores = new Map<string, number>();
 
-// Thresholds from environment variables (or defaults)
-const SAME_ACCOUNT_SPAM_THRESHOLD = Number(process.env.SAME_ACCOUNT_SPAM_THRESHOLD || 3);
-const MULTIPLE_ACCOUNT_SPAM_THRESHOLD = Number(process.env.MULTIPLE_ACCOUNT_SPAM_THRESHOLD || 3);
+// Thresholds for spam detection from environment variables or defaults
+const SAME_ACCOUNT_SPAM_THRESHOLD = Number(
+  process.env.SAME_ACCOUNT_SPAM_THRESHOLD || 3
+);
+const MULTIPLE_ACCOUNT_SPAM_THRESHOLD = Number(
+  process.env.MULTIPLE_ACCOUNT_SPAM_THRESHOLD || 3
+);
 const SCAM_SPAM_THRESHOLD = Number(process.env.SCAM_SPAM_THRESHOLD || 5);
 
+// Flag to prevent concurrent processing
 let isProcessing = false;
 
+/**
+ * Processes a batch of messages from the repository subscription feed to detect and label spam.
+ * 
+ * This function performs two passes over the messages:
+ * 
+ * 1. **Pass #1: Build up `postTextMap`**  
+ *    Iterates through the messages to populate a map (`postTextMap`) that associates post text with account data.  
+ *    The map structure is: `Map<text, Map<did, AccountData>>`, where:  
+ *    - `text` is the content of the post.  
+ *    - `did` is the decentralized identifier (DID) of the account.  
+ *    - `AccountData` contains the count of posts, unique post paths, and post URIs/CIDs.  
+ *    Posts with fewer than 5 words are ignored.  
+ * 
+ * 2. **Pass #2: Check thresholds & label**  
+ *    Iterates through `postTextMap` to detect spam based on predefined thresholds:  
+ *    - **Multiple Accounts Spam**: If the same text is posted by multiple accounts (exceeding `MULTIPLE_ACCOUNT_SPAM_THRESHOLD`), all posts with that text are labeled as spam.  
+ *    - **Same Account Spam**: If an account posts the same text repeatedly (exceeding `SAME_ACCOUNT_SPAM_THRESHOLD`), the posts are labeled as spam, and the account's cumulative spam score is updated.  
+ *    - **Scam Spam**: If an account's cumulative spam score exceeds `SCAM_SPAM_THRESHOLD`, the account is labeled as spam, added to the ignore list, and its score is reset.  
+ * 
+ * The function ensures no concurrent processing by using a flag (`isProcessing`).  
+ * 
+ * @param messages - An array of `SubscribeReposMessage` objects representing the messages to process.  
+ * @param bot - An instance of the `Bot` class used to label spam posts and accounts.  
+ * @returns A promise that resolves when the processing is complete.  
+ */
 export async function processBufferedMessages(
   messages: SubscribeReposMessage[],
   bot: Bot
@@ -52,12 +78,12 @@ export async function processBufferedMessages(
 
     for (const op of message.ops) {
       if (
-        op.action === 'create' &&
+        op.action === "create" &&
         op.payload &&
-        (op.payload as any).$type === 'app.bsky.feed.post' &&
+        (op.payload as any).$type === "app.bsky.feed.post" &&
         AppBskyFeedPost.isRecord(op.payload)
       ) {
-        const text = op.payload.text || '';
+        const text = op.payload.text || "";
         if (text.trim().split(/\s+/).length <= 4) continue;
 
         const uri = `at://${message.repo}/${op.path}`;
@@ -102,7 +128,7 @@ export async function processBufferedMessages(
         try {
           await bot.label({
             reference: { uri: post.uri, cid: post.cid },
-            labels: ['spam'],
+            labels: ["spam"],
             comment: `Auto-label SPAM (multiple accounts, same text) for URI: ${post.uri}`,
           });
         } catch (error) {
@@ -111,12 +137,12 @@ export async function processBufferedMessages(
       }
 
       console.log(
-        chalk.bgRed.bold('\n SPAM DETECTED ') +
-          chalk.redBright('The phrase ') +
+        chalk.bgRed.bold("\n SPAM DETECTED ") +
+          chalk.redBright("The phrase ") +
           chalk.blue(`“${text}” `) +
-          chalk.green('was posted by multiple accounts: ') +
-          chalk.yellow(allDids.join(', ')) +
-          chalk.redBright('.\n')
+          chalk.green("was posted by multiple accounts: ") +
+          chalk.yellow(allDids.join(", ")) +
+          chalk.redBright(".\n")
       );
     }
 
@@ -125,7 +151,7 @@ export async function processBufferedMessages(
       // Update cumulative score for the account
       let currentScore = cumulativeSpamScores.get(did) || 0;
       let updatedScore = 0;
-      if (accountData.count >= SAME_ACCOUNT_SPAM_THRESHOLD) { 
+      if (accountData.count >= SAME_ACCOUNT_SPAM_THRESHOLD) {
         let updatedScore = currentScore + accountData.count;
         cumulativeSpamScores.set(did, updatedScore);
 
@@ -133,20 +159,21 @@ export async function processBufferedMessages(
           try {
             await bot.label({
               reference: { uri: post.uri, cid: post.cid },
-              labels: ['spam'],
+              labels: ["spam"],
               comment: `Auto-label SPAM (same account repeated text) for URI: ${post.uri}`,
             });
-            
           } catch (error) {
             console.error(`Error labeling spam for DID ${did}`, error);
           }
         }
 
         console.log(
-          chalk.bgRed.bold('\n SPAM DETECTED ') +
-            chalk.redBright('The phrase ') +
+          chalk.bgRed.bold("\n SPAM DETECTED ") +
+            chalk.redBright("The phrase ") +
             chalk.blue(`“${text}” `) +
-            chalk.green(`was repeatedly posted ${accountData.count} times by `) +
+            chalk.green(
+              `was repeatedly posted ${accountData.count} times by `
+            ) +
             chalk.yellow(did) +
             chalk.redBright(`: score ${updatedScore}.\n`)
         );
@@ -157,17 +184,19 @@ export async function processBufferedMessages(
           // Label account
           await bot.label({
             reference: { did: did },
-            labels: ['spam'],
+            labels: ["spam"],
             comment: `Auto-label SPAM (same account repeated text) over ${currentScore} times, threshold = ${SCAM_SPAM_THRESHOLD}.`,
           });
 
           await addHandleToMemoryIgnoreList(did, 7);
-                    
+
           console.log(
-            chalk.bgMagenta.bold('\n POTENTIAL SCAM DETECTED ') +
+            chalk.bgMagenta.bold("\n POTENTIAL SCAM DETECTED ") +
               chalk.magentaBright(`Account ${did} posted the same text `) +
               chalk.blue(`“${text}” `) +
-              chalk.magentaBright(`over ${currentScore} times, threshold = ${SCAM_SPAM_THRESHOLD}.\n`)
+              chalk.magentaBright(
+                `over ${currentScore} times, threshold = ${SCAM_SPAM_THRESHOLD}.\n`
+              )
           );
 
           // Reset score after labeling

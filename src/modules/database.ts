@@ -5,8 +5,15 @@ const DATABASE_FILE = './ignoreHandles.db';
 
 let db: Database | null = null;
 
+
 /**
- * Initializes the SQLite database and creates the ignore_handles table if needed.
+ * Initializes the SQLite database by opening a connection to the specified database file
+ * and creating the `ignore_handles` table if it does not already exist. The table is designed
+ * to store handles (as primary keys) and their corresponding expiration times in milliseconds.
+ * 
+ * The database connection is stored in the global `db` variable for use in other functions.
+ * 
+ * @returns {Promise<void>} A promise that resolves when the database is successfully initialized.
  */
 export async function initializeDatabase(): Promise<void> {
   db = await open({
@@ -22,8 +29,15 @@ export async function initializeDatabase(): Promise<void> {
   `);
 }
 
+
 /**
- * Adds a handle to the ignore list with an expiration time in days.
+ * Adds a handle to the ignore list with a specified expiration period in days.
+ * If the handle already exists in the ignore list, it will be updated with the new expiration time.
+ * The expiration time is calculated by adding the specified number of days to the current time.
+ * 
+ * @param {string} handle - The handle to be added to the ignore list.
+ * @param {number} periodDays - The number of days after which the handle should be removed from the ignore list.
+ * @returns {Promise<void>} A promise that resolves when the handle has been successfully added or updated in the ignore list.
  */
 export async function addHandleToIgnoreList(
   handle: string,
@@ -41,7 +55,13 @@ export async function addHandleToIgnoreList(
 }
 
 /**
- * Checks if a handle is in the ignore list; removes it if expired.
+ * Checks if a given handle is currently in the ignore list and not expired.
+ * If the handle is found in the ignore list but its expiration time has passed,
+ * the handle is removed from the ignore list.
+ * 
+ * @param {string} handle - The handle to check in the ignore list.
+ * @returns {Promise<boolean>} A promise that resolves to `true` if the handle is in the ignore list and not expired,
+ *                             otherwise resolves to `false`.
  */
 export async function isHandleIgnored(handle: string): Promise<boolean> {
   if (!db) return false;
