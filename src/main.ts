@@ -14,6 +14,7 @@ import { updateScamTerms, processScamMessage } from './modules/scamDetection';
 import { loadIgnoreArray } from './modules/ignoreWatcher';
 
 import { Bot } from '@skyware/bot';
+import { isHandleInMemoryIgnored } from './modules/memDatabase';
 
 
 dotenv.config();
@@ -33,6 +34,10 @@ async function bufferAndProcessSpam(
   message: SubscribeReposMessage[],
   botInstance: Bot,
 ) {
+  if (isHandleInMemoryIgnored(message.repo)) {
+    console.log(chalk.gray.bold(`Ignored message from ${message.repo} (in-memory ignore list).`));
+    return;
+  }
   messageBuffer.push(message);
   if (!spamTimer) {
     spamTimer = setInterval(async () => {

@@ -7,6 +7,7 @@ import {
 } from 'atproto-firehose';
 
 import dotenv from 'dotenv';
+import { addHandleToMemoryIgnoreList } from './memDatabase';
 dotenv.config();
 
 /**
@@ -159,6 +160,8 @@ export async function processBufferedMessages(
             labels: ['spam'],
             comment: `Auto-label SPAM (same account repeated text) over ${currentScore} times, threshold = ${SCAM_SPAM_THRESHOLD}.`,
           });
+
+          await addHandleToMemoryIgnoreList(did, 7);
                     
           console.log(
             chalk.bgMagenta.bold('\n POTENTIAL SCAM DETECTED ') +

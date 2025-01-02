@@ -3,7 +3,7 @@
         {
             "name": "scam-detector",
             "script": "pnpm",
-            "args": "start"
+            "args": ["--color", "start"]
         }
     ]
 }
