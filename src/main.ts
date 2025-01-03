@@ -150,12 +150,15 @@ program
             AppBskyFeedPost.isRecord(op.payload)
           ) {
             const text = op.payload.text || ""; // Extract the text from the post
-            // Add the message to the spam buffer for repeated-text detection
-            await bufferAndProcessSpam(message, bot);
-
-            // Check if this might be a scam
             const cid = op.cid?.toString() || (op.cid as any)?.value || null; // Extract the CID
-            await processScamMessage(message.repo, text, op.path, cid, bot); // Process the message for scam detection
+
+            // Run both functions in parallel
+            await Promise.all([
+              // Add the message to the spam buffer for repeated-text detection
+              bufferAndProcessSpam(message, bot),
+              // Check if this might be a scam
+              processScamMessage(message.repo, text, op.path, cid, bot) // Process the message for scam detection
+            ]);
           }
         }
       } catch (err) {
