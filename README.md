@@ -82,6 +82,11 @@ The `ignore_handles` table consists of the following columns:
 
 ---
 
+## Diagram
+
+![diagram](docs/diagram.png)
+Made with https://gitdiagram.com/eddieoz/atproto-scam-detector
+
 ## Contributing
 
 Contributions are highly encouraged! If you wish to contribute:
