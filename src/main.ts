@@ -98,27 +98,27 @@ async function bufferAndProcessSpam(
  * and error logging.
  */
 program
-  .name("real-time-scam-detector") // Set the name of the CLI program
-  .description("Detects scam messages in real time") // Set the description of the CLI program
+  .name("real-time-scam-detector") 
+  .description("Detects scam messages in real time") 
   .argument("<host>", "PDS/BGS host") // Define a required argument for the PDS/BGS host
   .action(async (host) => {
     // Action to execute when the program is run
-    console.log(chalk.green("Initializing system...")); // Log system initialization
-    await initializeDatabase(); // Initialize the database
-    const bot = await initializeBotSession(); // Initialize the bot session
-    await loadIgnoreArray(); // Load the ignore array
+    console.log(chalk.green("Initializing system...")); 
+    await initializeDatabase(); 
+    const bot = await initializeBotSession(); 
+    await loadIgnoreArray(); 
 
-    console.log(chalk.green("Updating scam terms initially...")); // Log initial scam terms update
-    await updateScamTerms(); // Update scam terms initially
+    console.log(chalk.green("Updating scam terms initially...")); 
+    await updateScamTerms(); 
     // Setup a cron job to refresh scam terms periodically
     const cronJob = new CronJob("0 */1 * * *", async () => {
-      console.log("Cron job: Updating scam terms..."); // Log cron job execution
-      await updateScamTerms(); // Update scam terms
+      console.log("Cron job: Updating scam terms..."); 
+      await updateScamTerms(); 
     });
-    cronJob.start(); // Start the cron job
-    console.log(chalk.green(`Subscribing to repo events on wss://${host} ...`)); // Log subscription to repo events
+    cronJob.start(); 
+    console.log(chalk.green(`Subscribing to repo events on wss://${host} ...`)); 
     const subscription = subscribeRepos(`wss://${host}`, {
-      decodeRepoOps: true, // Enable decoding of repo operations
+      decodeRepoOps: true, 
     });
 
     // Handle subscription errors
@@ -130,7 +130,7 @@ program
     subscription.on("close", () => {
       console.log("Connection closed");
       if (spamTimer) {
-        clearInterval(spamTimer); // Clear the spam detection timer if it exists
+        clearInterval(spamTimer); 
       }
     });
 
@@ -149,20 +149,20 @@ program
             (op.payload as any).$type === "app.bsky.feed.post" &&
             AppBskyFeedPost.isRecord(op.payload)
           ) {
-            const text = op.payload.text || ""; // Extract the text from the post
-            const cid = op.cid?.toString() || (op.cid as any)?.value || null; // Extract the CID
+            const text = op.payload.text || ""; 
+            const cid = op.cid?.toString() || (op.cid as any)?.value || null; 
 
             // Run both functions in parallel
             await Promise.all([
-              // Add the message to the spam buffer for repeated-text detection
-              bufferAndProcessSpam(message, bot),
               // Check if this might be a scam
-              processScamMessage(message.repo, text, op.path, cid, bot) // Process the message for scam detection
+              processScamMessage(message.repo, text, op.path, cid, bot),
+              // Add the message to the spam buffer for repeated-text detection
+              bufferAndProcessSpam(message, bot)
             ]);
           }
         }
       } catch (err) {
-        console.error("Error processing message:", err); // Log any errors during message processing
+        console.error("Error processing message:", err); 
       }
     });
   });
