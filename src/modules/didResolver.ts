@@ -20,13 +20,11 @@ export async function resolveDidToHandle(did: string): Promise<string> {
   try {
     // Attempt to resolve the DID to a DID document.
     const doc = await didResolver.resolve(did);
-    // Check if the DID document exists and contains an `alsoKnownAs` field with at least one entry.
     if (doc && doc.alsoKnownAs && doc.alsoKnownAs.length > 0) {
       // Convert the first entry in the `alsoKnownAs` array from "at://handle" to "@handle".
       return doc.alsoKnownAs[0].replace('at://', '@');
     }
   } catch (err) {
-    // Log an error message if the DID resolution fails.
     console.error(`Failed to resolve DID: ${did}`);
   }
   // Return the original DID if resolution fails or the `alsoKnownAs` field is empty or missing.
