@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Crypto Labeler is an automated AI-driven labeler and moderator designed to safeguard the BlueSky community. It detects and combats crypto spammers, scammers, phishing attempts, and other malicious activities, ensuring a safer and more transparent environment for users.
+Crypto-Labeler is an advanced, AI-powered labeling and moderation tool dedicated to protecting the BlueSky community. By identifying and addressing crypto spammers, scammers, phishing attempts, and other malicious activities, it fosters a safer, more trustworthy, and transparent online environment for all users.
 
 This bot leverages [ATProto](https://github.com/bluesky-social/atproto) and the Ozone server protocol to identify and label harmful behavior. It utilizes advanced AI capabilities to detect spam, scams, bots, and phishing accounts, streamlining moderation efforts on the BlueSky platform.
 
