@@ -34,13 +34,13 @@ let scamRegex: RegExp;
  * @returns {Promise<void>} A promise that resolves when the scam terms and regex have been updated.
  */
 export async function updateScamTerms(): Promise<void> {
-  const trendingCoins = await findTrendingCoins();
+  //const trendingCoins = await findTrendingCoins();
 
   allScamTerms = [
     ...scamTerms.english,
     ...scamTerms.spanish,
     ...scamTerms.portuguese,
-    ...trendingCoins,
+    //...trendingCoins,
   ];
   console.log("All scam terms: ", allScamTerms.toString());
 
