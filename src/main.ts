@@ -1,14 +1,9 @@
-#!/usr/bin/env ts-node
+// /home/eddieoz/Projects/git/atproto-scam-detector/src/main.ts
 
 import dotenv from "dotenv";
 import chalk from "chalk";
 import { program } from "commander";
 import { CronJob } from "cron";
-import {
-  subscribeRepos,
-  SubscribeReposMessage,
-  ComAtprotoSyncSubscribeRepos,
-} from "atproto-firehose";
 import { AppBskyFeedPost } from "@atproto/api";
 
 import { initializeDatabase } from "./modules/database";
@@ -19,6 +14,7 @@ import { loadIgnoreArray } from "./modules/ignoreWatcher";
 
 import { Bot } from "@skyware/bot";
 import { isHandleInMemoryIgnored } from "./modules/memDatabase";
+import WebSocket from 'ws';
 
 dotenv.config();
 
@@ -49,10 +45,10 @@ async function bufferAndProcessSpam(
   botInstance: Bot
 ) {
   // Check if the sender's handle is in the in-memory ignore list
-  if (isHandleInMemoryIgnored(message.repo)) {
+  if (isHandleInMemoryIgnored(message.did)) {
     console.log(
       chalk.gray.bold(
-        `Ignored message from ${message.repo} (in-memory ignore list).`
+        `Ignored message from ${message.did} (in-memory ignore list).`
       )
     );
     return;
@@ -73,7 +69,6 @@ async function bufferAndProcessSpam(
     }, TIME_WINDOW_MS);
   }
 }
-
 
 /**
  * Configures and runs the real-time scam detection CLI program.
@@ -117,49 +112,63 @@ program
     });
     cronJob.start(); 
     console.log(chalk.green(`Subscribing to repo events on wss://${host} ...`)); 
-    const subscription = subscribeRepos(`wss://${host}`, {
-      decodeRepoOps: true, 
-    });
+    
+    // Define the WebSocket URL
+    const firehoseUrl = 'wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post'; // Replace with the actual firehose URL
+    // Create a new WebSocket instance
+    const subscription = new WebSocket(firehoseUrl);
 
-    // Handle subscription errors
-    subscription.on("error", (error) => {
-      console.error("Subscription error:", error);
+    // Event listener for when the connection is opened
+    subscription.on('open', () => {
+        console.log('Connected to the firehose');
     });
-
-    // Handle subscription close events
-    subscription.on("close", () => {
-      console.log("Connection closed");
-      if (spamTimer) {
-        clearInterval(spamTimer); 
-      }
+       
+    // Event listener for when the connection is closed
+    subscription.on('close', () => {
+        console.log('Disconnected from the firehose');
+    });
+    
+    // Event listener for errors
+    subscription.on('error', (error: Error) => {
+        console.error(`WebSocket error: ${error.message}`);
     });
 
     // Handle incoming messages from the subscription
-    subscription.on("message", async (message: SubscribeReposMessage) => {
+    subscription.on('message', (message: WebSocket.Data) => {
       try {
-        // Check if the message is a commit
-        if (!ComAtprotoSyncSubscribeRepos.isCommit(message)) return;
+        // Convert the Buffer to a string and parse it as JSON
+        const messageString = message.toString();
+        const messageJson = JSON.parse(messageString);
 
-        // Iterate over the operations in the commit
-        for (const op of message.ops) {
+        // Log the entire message for debugging
+        // console.log('Received message:', messageJson);
+
+        // Check if the message contains a commit
+        if (messageJson.commit) {
+          const commit = messageJson.commit;
+
           // Check if the operation is a create action and the payload is a post
           if (
-            op.action === "create" &&
-            op.payload &&
-            (op.payload as any).$type === "app.bsky.feed.post" &&
-            AppBskyFeedPost.isRecord(op.payload)
+            commit.operation === "create" &&
+            commit.collection === "app.bsky.feed.post" &&
+            commit.record &&
+            (commit.record as any).$type === "app.bsky.feed.post" &&
+            AppBskyFeedPost.isRecord(commit.record)
           ) {
-            const text = op.payload.text || ""; 
-            const cid = op.cid?.toString() || (op.cid as any)?.value || null; 
+            const text = commit.record.text || ""; 
+            const cid = commit.cid?.toString() || (commit.cid as any)?.value || null;
+            const uri = `at://${message.did}/${commit.collection}/${commit.rkey}`;
 
             // Run both functions in parallel
-            await Promise.all([
+            Promise.all([
               // Check if this might be a scam
-              processScamMessage(message.repo, text, op.path, cid, bot),
+              processScamMessage(messageJson.did, text, uri, cid, bot),
               // Add the message to the spam buffer for repeated-text detection
-              bufferAndProcessSpam(message, bot)
+              bufferAndProcessSpam(messageJson, bot)
             ]);
           }
+        } else {
+          // console.error('No commit found in message:', messageJson);
         }
       } catch (err) {
         console.error("Error processing message:", err); 

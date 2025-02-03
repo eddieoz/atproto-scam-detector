@@ -1,10 +1,9 @@
+// /home/eddieoz/Projects/git/atproto-scam-detector/src/modules/spamDetection.ts
+
 import chalk from "chalk";
 import { Bot } from "@skyware/bot";
 import { AppBskyFeedPost } from "@atproto/api";
-import {
-  SubscribeReposMessage,
-  ComAtprotoSyncSubscribeRepos,
-} from "atproto-firehose";
+import { SubscribeReposMessage } from "atproto-firehose";
 
 import dotenv from "dotenv";
 import { addHandleToMemoryIgnoreList } from "./memDatabase";
@@ -37,9 +36,9 @@ let isProcessing = false;
 
 /**
  * Processes a batch of messages from the repository subscription feed to detect and label spam.
- * 
+ *
  * This function performs two passes over the messages:
- * 
+ *
  * 1. **Pass #1: Build up `postTextMap`**  
  *    Iterates through the messages to populate a map (`postTextMap`) that associates post text with account data.  
  *    The map structure is: `Map<text, Map<did, AccountData>>`, where:  
@@ -47,18 +46,18 @@ let isProcessing = false;
  *    - `did` is the decentralized identifier (DID) of the account.  
  *    - `AccountData` contains the count of posts, unique post paths, and post URIs/CIDs.  
  *    Posts with fewer than 5 words are ignored.  
- * 
+ *
  * 2. **Pass #2: Check thresholds & label**  
  *    Iterates through `postTextMap` to detect spam based on predefined thresholds:  
  *    - **Multiple Accounts Spam**: If the same text is posted by multiple accounts (exceeding `MULTIPLE_ACCOUNT_SPAM_THRESHOLD`), all posts with that text are labeled as spam.  
  *    - **Same Account Spam**: If an account posts the same text repeatedly (exceeding `SAME_ACCOUNT_SPAM_THRESHOLD`), the posts are labeled as spam, and the account's cumulative spam score is updated.  
  *    - **Scam Spam**: If an account's cumulative spam score exceeds `SCAM_SPAM_THRESHOLD`, the account is labeled as spam, added to the ignore list, and its score is reset.  
  * 
- * The function ensures no concurrent processing by using a flag (`isProcessing`).  
- * 
- * @param messages - An array of `SubscribeReposMessage` objects representing the messages to process.  
- * @param bot - An instance of the `Bot` class used to label spam posts and accounts.  
- * @returns A promise that resolves when the processing is complete.  
+ * The function ensures no concurrent processing by using a flag (`isProcessing`).
+ *
+ * @param messages - An array of `SubscribeReposMessage` objects representing the messages to process.
+ * @param bot - An instance of the `Bot` class used to label spam posts and accounts.
+ * @returns A promise that resolves when the processing is complete.
  */
 export async function processBufferedMessages(
   messages: SubscribeReposMessage[],
@@ -74,19 +73,23 @@ export async function processBufferedMessages(
   // PASS #1: Build up postTextMap
   // -------------------------------------
   for (const message of messages) {
-    if (!ComAtprotoSyncSubscribeRepos.isCommit(message)) continue;
+    // Now we should check the structure of `message` as per the latest definition
+    if (message.commit) { // Check if there is a commit present
+      const op = message.commit;
+      // console.log(message)
 
-    for (const op of message.ops) {
+      // Check if the operation is a create action
       if (
-        op.action === "create" &&
-        op.payload &&
-        (op.payload as any).$type === "app.bsky.feed.post" &&
-        AppBskyFeedPost.isRecord(op.payload)
+        op.operation === "create" &&
+        op.collection === "app.bsky.feed.post" &&
+        op.record &&
+        (op.record as any).$type === "app.bsky.feed.post" &&
+        AppBskyFeedPost.isRecord(op.record)
       ) {
-        const text = op.payload.text || "";
-        if (text.trim().split(/\s+/).length <= 4) continue;
+        const text = op.record.text || "";
+        if (text.trim().split(/\s+/).length < 5) continue; // Ignore posts with fewer than 5 words
 
-        const uri = `at://${message.repo}/${op.path}`;
+        const uri = `at://${message.did}/${op.collection}/${op.rkey}`;
         const cid = op.cid?.toString() || (op.cid as any)?.value || null;
 
         let didMap = postTextMap.get(text);
@@ -95,14 +98,14 @@ export async function processBufferedMessages(
           postTextMap.set(text, didMap);
         }
 
-        let accountData = didMap.get(message.repo);
+        let accountData = didMap.get(message.did);
         if (!accountData) {
           accountData = { count: 0, postPaths: new Set(), posts: [] };
-          didMap.set(message.repo, accountData);
+          didMap.set(message.did, accountData);
         }
 
-        if (!accountData.postPaths.has(op.path)) {
-          accountData.postPaths.add(op.path);
+        if (!accountData.postPaths.has(op.rkey)) {
+          accountData.postPaths.add(op.rkey);
           accountData.count += 1;
           accountData.posts.push({ uri, cid });
         }
@@ -151,10 +154,11 @@ export async function processBufferedMessages(
       // Update cumulative score for the account
       let currentScore = cumulativeSpamScores.get(did) || 0;
       let updatedScore = 0;
-      if (accountData.count >= SAME_ACCOUNT_SPAM_THRESHOLD) {
-        let updatedScore = currentScore + accountData.count;
-        cumulativeSpamScores.set(did, updatedScore);
 
+      if (accountData.count >= SAME_ACCOUNT_SPAM_THRESHOLD) {
+        updatedScore = currentScore + accountData.count;
+        cumulativeSpamScores.set(did, updatedScore);
+        
         for (const post of accountData.posts) {
           try {
             await bot.label({
@@ -178,8 +182,9 @@ export async function processBufferedMessages(
             chalk.redBright(`: score ${updatedScore}.\n`)
         );
       }
+
       // Check if the cumulative score exceeds the SCAM_SPAM_THRESHOLD
-      if (currentScore > SCAM_SPAM_THRESHOLD) {
+      if (updatedScore > SCAM_SPAM_THRESHOLD) {
         try {
           // Label account
           await bot.label({
@@ -200,8 +205,6 @@ export async function processBufferedMessages(
           );
 
           // Reset score after labeling
-          currentScore = 0;
-          updatedScore = 0;
           cumulativeSpamScores.set(did, 0);
         } catch (error) {
           console.error(`Error labeling spam for DID ${did}`, error);

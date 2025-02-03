@@ -236,7 +236,7 @@ export async function processScamMessage(
     return;
   }
 
-  const uri = `at://${repoDid}/${path}`;
+  const uri = path;
   const classification = await evaluateWithOpenAI(text.slice(0, 100));
 
   await handleScamClassification(
