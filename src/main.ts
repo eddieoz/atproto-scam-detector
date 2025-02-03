@@ -157,8 +157,8 @@ program
           ) {
             const text = commit.record.text || ""; 
             const cid = commit.cid?.toString() || (commit.cid as any)?.value || null;
-            const uri = `at://${message.did}/${commit.collection}/${commit.rkey}`;
-
+            const uri = `at://${messageJson.did}/${commit.collection}/${commit.rkey}`;
+            // console.log(uri)
             // Run both functions in parallel
             Promise.all([
               // Check if this might be a scam
