@@ -22,6 +22,8 @@ dotenv.config();
 const TIME_WINDOW_SEC = parseInt(process.env.TIME_WINDOW || "60", 10);
 const TIME_WINDOW_MS = TIME_WINDOW_SEC * 1000;
 
+const FIREHOSE_URL = process.env.FIREHOSE_URL || "";
+
 // For buffering spam detection
 let messageBuffer: SubscribeReposMessage[] = [];
 let spamTimer: NodeJS.Timeout | null = null;
@@ -113,10 +115,8 @@ program
     cronJob.start(); 
     console.log(chalk.green(`Subscribing to repo events on wss://${host} ...`)); 
     
-    // Define the WebSocket URL
-    const firehoseUrl = 'wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post'; // Replace with the actual firehose URL
     // Create a new WebSocket instance
-    const subscription = new WebSocket(firehoseUrl);
+    const subscription = new WebSocket(FIREHOSE_URL);
 
     // Event listener for when the connection is opened
     subscription.on('open', () => {

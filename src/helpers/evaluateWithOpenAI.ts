@@ -14,9 +14,12 @@ if (!SYSTEM_PROMPT) {
 }
 
 // Retrieve the OpenAI API key from environment variables
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const AI_API_KEY = process.env.AI_API_KEY;
+const AI_ENDPOINT = process.env.AI_ENDPOINT;
+const AI_MODEL = process.env.AI_MODEL;
+
 // Throw an error if the API key is missing
-if (!OPENAI_API_KEY) {
+if (!AI_API_KEY) {
   throw new Error("OpenAI API key is missing. Please add it to the .env file.");
 }
 
@@ -37,11 +40,9 @@ export async function evaluateWithOpenAI(text) {
   try {
     // Make a POST request to the OpenAI API (or DeepSeek-V3 using the same interface)
     const response = await axios.post(
-      // 'https://api.openai.com/v1/chat/completions',
-      "https://api.deepseek.com/v1/chat/completions",
+      `${AI_ENDPOINT}`,
       {
-        //model: 'gpt-4o-mini',
-        model: "deepseek-chat",
+        model: `${AI_MODEL}`,
         messages: [
           {
             role: "system",
@@ -56,7 +57,7 @@ export async function evaluateWithOpenAI(text) {
       },
       {
         headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          Authorization: `Bearer ${AI_API_KEY}`,
           "Content-Type": "application/json",
         },
       }
